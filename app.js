@@ -15,21 +15,26 @@ app.get('/', function (req, res) {
 
 // Get task endpoint
 app.get('/tasks/:id', function (req, res) {
-    const params = {
-        TableName: TASKS_TABLE,
-        Key: {
-            id: req.params.id,
-        },
-    }
+    // const params = {
+    //     TableName: "tasks-table1-dev",
+    //     Key: {
+    //         "id": req.params.id
+    //     }
+    // }
+
+    var params = {}
+    params.TableName = TASKS_TABLE;
+    var key = { id: req.params.id };
+    params.Key = key;
 
     dynamoDb.get(params, (error, result) => {
         if (error) {
             console.log(error);
-            res.status(400).json({ error: 'Could not get task' });
+            res.status(400).json({ error: `Could not get task: ${error}` });
         }
         if (result.Item) {
             const { id, text, day, reminder } = result.Item;
-            res.json({ id, text, day, reminder });
+            res.status(200).json({ id, text, day, reminder })
         } else {
             res.status(404).json({ error: "task not found" });
         }
@@ -39,7 +44,7 @@ app.get('/tasks/:id', function (req, res) {
 // Create task endpoint
 app.post('/tasks', function (req, res) {
     const { id, text, day, reminder } = req.body;
-    if (typeof id !== 'number') {
+    if (typeof id !== 'string') {
         res.status(400).json({ error: '"id" must be a string' });
     } else if (typeof text !== 'string') {
         res.status(400).json({ error: '"text" must be a string' });
@@ -90,7 +95,7 @@ app.put('/tasks/:id', function (req, res) {
             console.log(error);
             res.status(400).json({ error: 'Could not update task' });
         }
-        res.json({ id, text, day, reminder });
+        res.status(200).json({ id, text, day, reminder });
     });
 })
 
@@ -108,15 +113,8 @@ app.delete('/tasks/:id', function (req, res) {
             console.log(error);
             res.status(400).json({ error: 'Could not delete task' });
         } else {
-            res.json({ "result": "Item Deleted Successfully" })
+            res.status(200).json({ "result": "Item Deleted Successfully" })
         }
-        // if (result.Item) {
-        //     // const { id, text, day, reminder } = result.Item;
-        //     // res.json({ id, text, day, reminder });
-
-        // } else {
-        //     res.status(404).json({ error: "task not found" });
-        // }
     });
 })
 

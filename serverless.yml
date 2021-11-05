@@ -3,7 +3,7 @@
 service: task-tracker-api
 
 custom:
-  tableName: 'tasks-table1-${self:provider.stage}'
+  tableName: 'tasks-table-${self:provider.stage}'
 
 provider:
   name: aws
@@ -29,7 +29,23 @@ functions:
     handler: app.handler
     events:
       - http: ANY /
-      - http: 'ANY {proxy+}'
+      - http: 'ANY {id}'
+  getTask:
+    handler: app.handler
+    events:
+      - http: 'GET /tasks/{id}'
+  createTask:
+    handler: app.handler
+    events:
+      - http: 'POST /tasks'
+  updateTask:
+    handler: app.handler
+    events:
+      - http: 'PUT /tasks/{id}'
+  deleteTask:
+    handler: app.handler
+    events:
+      - http: 'DELETE /tasks/{id}'
 
 resources:
   Resources:
@@ -38,12 +54,12 @@ resources:
       Properties:
         AttributeDefinitions:
           -
-            AttributeName: id
-            AttributeType: N
+            AttributeName: "id"
+            AttributeType: "S"
         KeySchema:
           -
-            AttributeName: id
-            KeyType: HASH
+            AttributeName: "id"
+            KeyType: "HASH"
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
