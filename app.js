@@ -13,15 +13,43 @@ app.get('/', function (req, res) {
     res.send('Hello World!')
 })
 
+// Get all tasks
+app.get('/tasks', function (req, res) {
+    const params = {
+        TableName: TASKS_TABLE
+        // ProjectExpression: "#id, #text, #day, #reminder",
+        // ExpressionAttributeNames: {
+        //     "#id": "id",
+        //     "#text": "text",
+        //     "#day": "day",
+        //     "#reminder": "reminder"
+        // }
+    };
+
+    let tasksList = [];
+    dynamoDb.scan(params, onScan);
+
+    function onScan(error, result) {
+        if (error) {
+            console.log(error)
+            return res.status(400).json({ error: `Could not get tasks: ${error}` });
+        }
+        result.Items.forEach(function (task) {
+            tasksList.push(task);
+
+            if (typeof result.LastEvaluatedKey != "undefined") {
+                console.log("Scanning for more...");
+                params.ExclusiveStartKey = result.LastEvaluatedKey;
+                dynamoDb.scan(params, onScan);
+            }
+        })
+
+        res.status(200).json(tasksList);
+    }
+})
+
 // Get task endpoint
 app.get('/tasks/:id', function (req, res) {
-    // const params = {
-    //     TableName: "tasks-table1-dev",
-    //     Key: {
-    //         "id": req.params.id
-    //     }
-    // }
-
     var params = {}
     params.TableName = TASKS_TABLE;
     var key = { id: req.params.id };
@@ -98,7 +126,6 @@ app.put('/tasks/:id', function (req, res) {
         if (error) {
             console.log(error);
             return res.status(400).json({ error: `Could not update task: ${error}` });
-            // reqBody { text: ${text}, day: ${day} reminder: ${reminder}
         }
         res.status(200).json(req.body);
     });

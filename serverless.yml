@@ -30,6 +30,10 @@ functions:
     events:
       - http: ANY /
       - http: 'ANY {id}'
+  getTasks:
+    handler: app.handler
+    events:
+      - http: 'GET /tasks'
   getTask:
     handler: app.handler
     events:
