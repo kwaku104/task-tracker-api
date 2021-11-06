@@ -75,27 +75,32 @@ app.post('/tasks', function (req, res) {
 
 // Update Task Reminder
 app.put('/tasks/:id', function (req, res) {
-    const { id, text, day, reminder } = req.body;
+    const { text, day, reminder } = req.body;
     const params = {
         TableName: TASKS_TABLE,
         Key: {
             id: req.params.id,
         },
-        UpdateExpression: 'set id = :id, text = :text, day = :day, reminder = :reminder',
-        ExpressionAttributes: {
-            ':id': id,
-            ':text': text,
-            ':day': day,
-            ':reminder': reminder
+        UpdateExpression: "set #text = :t, #day = :d, #reminder = :r",
+        ExpressionAttributeNames: {
+            "#text": "text",
+            "#day": "day",
+            "#reminder": "reminder"
+        },
+        ExpressionAttributeValues: {
+            ":t": text,
+            ":d": day,
+            ":r": reminder
         }
     }
 
-    dynamoDb.update(params, (error) => {
+    dynamoDb.update(params, (error, result) => {
         if (error) {
             console.log(error);
-            res.status(400).json({ error: 'Could not update task' });
+            return res.status(400).json({ error: `Could not update task: ${error}` });
+            // reqBody { text: ${text}, day: ${day} reminder: ${reminder}
         }
-        res.status(200).json({ id, text, day, reminder });
+        res.status(200).json(req.body);
     });
 })
 
