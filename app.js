@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const AWS = require('aws-sdk');
 const bodyParser = require('body-parser');
+const uuid = require('uuid');
 
 const TASKS_TABLE = process.env.TASKS_TABLE;
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
@@ -17,16 +18,9 @@ app.get('/', function (req, res) {
 app.get('/tasks', function (req, res) {
     const params = {
         TableName: TASKS_TABLE
-        // ProjectExpression: "#id, #text, #day, #reminder",
-        // ExpressionAttributeNames: {
-        //     "#id": "id",
-        //     "#text": "text",
-        //     "#day": "day",
-        //     "#reminder": "reminder"
-        // }
     };
 
-    let tasksList = [];
+    let tasksList = { "tasks": [] };
     dynamoDb.scan(params, onScan);
 
     function onScan(error, result) {
@@ -35,7 +29,7 @@ app.get('/tasks', function (req, res) {
             return res.status(400).json({ error: `Could not get tasks: ${error}` });
         }
         result.Items.forEach(function (task) {
-            tasksList.push(task);
+            tasksList.tasks.push(task);
 
             if (typeof result.LastEvaluatedKey != "undefined") {
                 console.log("Scanning for more...");
@@ -71,16 +65,17 @@ app.get('/tasks/:id', function (req, res) {
 
 // Create task endpoint
 app.post('/tasks', function (req, res) {
-    const { id, text, day, reminder } = req.body;
-    if (typeof id !== 'string') {
-        res.status(400).json({ error: '"id" must be a string' });
-    } else if (typeof text !== 'string') {
-        res.status(400).json({ error: '"text" must be a string' });
-    } else if (typeof day !== 'string') {
-        res.status(400).json({ error: '"day" must be a string' });
-    } else if (typeof reminder == null) {
-        res.status(400).json({ error: '"reminder" must be boolean' });
-    }
+
+    const { text, day, reminder } = req.body;
+    const id = String(uuid.v1());
+
+    // if (typeof text !== 'string') {
+    //     res.status(400).json({ error: '"text" must be a string' });
+    // } else if (typeof day !== 'string') {
+    //     res.status(400).json({ error: '"day" must be a string' });
+    // } else if (typeof reminder == null) {
+    //     res.status(400).json({ error: '"reminder" must be boolean' });
+    // }
 
     const params = {
         TableName: TASKS_TABLE,
@@ -92,12 +87,12 @@ app.post('/tasks', function (req, res) {
         },
     };
 
-    dynamoDb.put(params, (error) => {
+    dynamoDb.put(params, (error, result) => {
         if (error) {
             console.log(error);
-            res.status(400).json({ error: 'Could not create task' });
+            return res.status(400).json({ error: `Could not create task: ${error}` });
         }
-        res.json({ id, text, day, reminder });
+        res.status(200).json({ id, text, day, reminder });
     });
 })
 
