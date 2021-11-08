@@ -4,6 +4,10 @@ const app = express();
 const AWS = require('aws-sdk');
 const bodyParser = require('body-parser');
 const uuid = require('uuid');
+var cors = require('cors')
+
+app.use(cors())
+app.options('*', cors())
 
 const TASKS_TABLE = process.env.TASKS_TABLE;
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
@@ -20,7 +24,7 @@ app.get('/tasks', function (req, res) {
         TableName: TASKS_TABLE
     };
 
-    let tasksList = { "tasks": [] };
+    let tasksList = [];
     dynamoDb.scan(params, onScan);
 
     function onScan(error, result) {
@@ -29,7 +33,7 @@ app.get('/tasks', function (req, res) {
             return res.status(400).json({ error: `Could not get tasks: ${error}` });
         }
         result.Items.forEach(function (task) {
-            tasksList.tasks.push(task);
+            tasksList.push(task);
 
             if (typeof result.LastEvaluatedKey != "undefined") {
                 console.log("Scanning for more...");
